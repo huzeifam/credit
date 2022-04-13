@@ -28,15 +28,15 @@ public class KreditService {
 
     public KreditResponse requestKredit(KreditResponse kred) {
 
-        //  boolean kredits = restTemplate.getForObject("http://account:8085/api/accounts/numbers", List.class).contains(kred.getAccountNo());
-        boolean kredits = restTemplate.getForObject("http://localhost:8085/api/accounts/numbers", List.class).contains(kred.getAccountNo());
+        boolean kredits = restTemplate.getForObject("http://account:8085/api/accounts/numbers", List.class).contains(kred.getAccountNo());
+//      boolean kredits = restTemplate.getForObject("http://localhost:8085/api/accounts/numbers", List.class).contains(kred.getAccountNo());
 
 
         if (!kredits) {
             return null;
         } else {
-           // restTemplate.put("http://account:8085/api/accounts/"+kred.getAccountNo()+"/deposit/"+kred.getKreditAmount(),List.class);
-            restTemplate.put("http://localhost:8085/api/accounts/"+kred.getAccountNo()+"/deposit/"+kred.getKreditAmount(),List.class);
+            restTemplate.put("http://account:8085/api/accounts/"+kred.getAccountNo()+"/deposit/"+kred.getKreditAmount(),List.class);
+//          restTemplate.put("http://localhost:8085/api/accounts/"+kred.getAccountNo()+"/deposit/"+kred.getKreditAmount(),List.class);
             return kreditRepository.save(kred);
 
         }
@@ -49,5 +49,12 @@ public class KreditService {
 
     public void deleteByKreditNo(Integer kreditNo) {
         kreditRepository.deleteById(kreditNo);
+    }
+
+    public KreditResponse payKredit(KreditResponse kredit) {
+
+//        restTemplate.put("http://localhost:8085/api/accounts/"+kredit.getAccountNo()+"/withdraw/"+kredit.getKreditAmount(),List.class);
+        restTemplate.put("http://account:8085/api/accounts/"+kredit.getAccountNo()+"/withdraw/"+kredit.getInterestRate(),List.class);
+        return kreditRepository.save(kredit);
     }
 }

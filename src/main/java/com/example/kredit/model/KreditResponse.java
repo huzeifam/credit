@@ -53,4 +53,12 @@ public class KreditResponse {
     public LocalDateTime getStartDate() {
         return startDate;
     }
+
+
+
+    public void setKreditAmount(Double kreditAmount) {
+        this.kreditAmount = kreditAmount;
+    }
+
+
 }

@@ -19,6 +19,8 @@ dependencies {
 	implementation group: 'org.iban4j', name: 'iban4j', version: '3.2.3-RELEASE'
 	implementation group: 'org.postgresql', name: 'postgresql', version: '42.3.3'
 	implementation group: 'org.springdoc', name: 'springdoc-openapi-ui', version: '1.6.6'
+	testImplementation group: 'org.awaitility', name: 'awaitility', version: '4.2.0'
+
 
 }
 
