@@ -1,4 +1,4 @@
-package com.example.kredit;
+package com.example.credit;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -7,11 +7,10 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.web.client.RestTemplate;
 
 @SpringBootApplication
-@EnableScheduling
-public class KreditApplication {
+public class CreditApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(KreditApplication.class, args);
+		SpringApplication.run(CreditApplication.class, args);
 	}
 
 	@Bean
