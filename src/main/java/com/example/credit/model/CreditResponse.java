@@ -4,6 +4,7 @@ package com.example.credit.model;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
@@ -15,20 +16,29 @@ public class CreditResponse {
     private Double creditAmount;
     private Integer periodInMonth;
     private Double interestRate;
+
     private Double interest;
-    private LocalDateTime startDate;
+
+    private Double totalRepayment;
+
+    private Double remainingRepayment;
+    private Double rates;
+    private LocalDate startDate;
 
     public CreditResponse(){
 
     }
 
-    public CreditResponse(Integer creditNo, Integer accountNo, Double creditAmount, Integer periodInMonth, Double interestRate, Double interest, LocalDateTime startDate) {
+    public CreditResponse(Integer creditNo, Integer accountNo, Double creditAmount, Integer periodInMonth, Double interestRate, Double interest, Double totalRepayment, Double remainingRepayment, Double rates, LocalDate startDate) {
         this.creditNo = creditNo;
         this.accountNo = accountNo;
         this.creditAmount = creditAmount;
         this.periodInMonth = periodInMonth;
         this.interestRate = interestRate;
         this.interest = interest;
+        this.totalRepayment = totalRepayment;
+        this.remainingRepayment = remainingRepayment;
+        this.rates = rates;
         this.startDate = startDate;
     }
 
@@ -56,15 +66,24 @@ public class CreditResponse {
         return Math.round(interest*100.0)/100.0;
     }
 
-    public LocalDateTime getStartDate() {
+    public Double getTotalRepayment() {
+        return Math.round(totalRepayment*100.0)/100.0;
+    }
+
+    public Double getRemainingRepayment() {
+        return Math.round(remainingRepayment*100.0)/100.0;
+    }
+
+    public Double getRates() {
+        return Math.round(rates*100.0)/100.0;
+    }
+
+    public LocalDate getStartDate() {
         return startDate;
     }
 
 
-
-    public void setCreditAmount(Double kreditAmount) {
-        this.creditAmount = kreditAmount;
+    public void setRemainingRepayment(Double remainingRepayment) {
+        this.remainingRepayment = remainingRepayment;
     }
-
-
 }

@@ -53,7 +53,7 @@ public class CreditService {
 
     public CreditResponse payCredit(CreditResponse credit) {
 
-        restTemplate.put("http://localhost:8085/api/accounts/"+credit.getAccountNo()+"/withdraw/"+credit.getInterest(),List.class);
+        restTemplate.put("http://localhost:8085/api/accounts/"+credit.getAccountNo()+"/withdraw/"+credit.getRates(),List.class);
 //        restTemplate.put("http://account:8085/api/accounts/" + credit.getAccountNo() + "/withdraw/" + credit.getInterest(), List.class);
         return creditRepository.save(credit);
     }

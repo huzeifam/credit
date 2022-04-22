@@ -11,6 +11,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -60,7 +61,10 @@ public class CreditController {
                 enumRequest.getPeriodInMonth(),
                 12.0 / enumRequest.getPeriodInMonth() * 10.0,
                 (cRequest.getCreditAmount() / 100.0) * (12.0 / enumRequest.getPeriodInMonth() * 10.0),
-                LocalDateTime.now()
+                cRequest.getCreditAmount() + (cRequest.getCreditAmount() / 100.0) * (12.0 / enumRequest.getPeriodInMonth() * 10.0),
+                cRequest.getCreditAmount() + (cRequest.getCreditAmount() / 100.0) * (12.0 / enumRequest.getPeriodInMonth() * 10.0),
+                (cRequest.getCreditAmount() + (cRequest.getCreditAmount() / 100.0) * (12.0 / enumRequest.getPeriodInMonth() * 10.0))/enumRequest.getPeriodInMonth(),
+                LocalDate.now()
         );
         return creditService.requestCredit(cred);
     }
@@ -74,9 +78,9 @@ public class CreditController {
 
     ) {
         CreditResponse credit = creditService.findByCreditNo(creditNo).orElseThrow();
-        Double payedInterestRate = credit.getCreditAmount() - credit.getInterest();
+        Double payedInterestRate = credit.getRemainingRepayment() - credit.getRates();
         if (payedInterestRate >= 0) {
-            credit.setCreditAmount(payedInterestRate);
+            credit.setRemainingRepayment(payedInterestRate);
             CreditResponse savedCredit = creditService.payCredit(credit);
             return savedCredit;
 
