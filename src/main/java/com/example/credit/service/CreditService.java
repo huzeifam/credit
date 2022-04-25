@@ -57,4 +57,14 @@ public class CreditService {
 //        restTemplate.put("http://account:8085/api/accounts/" + credit.getAccountNo() + "/withdraw/" + credit.getInterest(), List.class);
         return creditRepository.save(credit);
     }
+
+    public List<CreditResponse> findCreditByAccountNo(Integer accountNo) {
+        return creditRepository.findCreditByAccountNo(accountNo);
+    }
+
+    public Void deleteCreditByAccountNo(Integer accountNo) {
+
+        creditRepository.deleteCreditByAccountNo(accountNo);
+        return null;
+    }
 }

@@ -5,6 +5,7 @@ import com.example.credit.model.CreditCreateRequest;
 import com.example.credit.model.CreditResponse;
 import com.example.credit.model.CreditResponseEnum;
 import com.example.credit.service.CreditService;
+import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import org.springframework.http.HttpStatus;
@@ -107,5 +108,20 @@ public class CreditController {
         } else
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Could not delete. Credit with credit number " + creditNo + " does not exist.");
 
+    }
+
+    @Hidden
+    @DeleteMapping("/credits/account-credits/{accountNo}")
+    public Void deleteCreditsOfAccount(
+            @PathVariable Integer accountNo
+    ){
+        List<CreditResponse> credit = creditService.findCreditByAccountNo(accountNo);
+
+        if (credit.isEmpty()){
+            return null;
+        }
+        else {
+            return creditService.deleteCreditByAccountNo(accountNo);
+        }
     }
 }
