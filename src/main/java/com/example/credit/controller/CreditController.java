@@ -83,8 +83,8 @@ public class CreditController {
         Double payedInterestRate = credit.getRemainingRepayment() - credit.getRates();
         if (payedInterestRate >= 0) {
             credit.setRemainingRepayment(payedInterestRate);
-            creditService.payCredit(credit);
-            return ResponseEntity.ok(credit);
+            return creditService.payCredit(credit);
+
 
         } else
             creditService.deleteByCreditNo(creditNo);

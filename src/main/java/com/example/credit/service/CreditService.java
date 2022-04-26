@@ -3,6 +3,8 @@ package com.example.credit.service;
 import com.example.credit.model.CreditResponse;
 import com.example.credit.repository.CreditRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -27,15 +29,15 @@ public class CreditService {
 
     public CreditResponse requestCredit(CreditResponse cred) {
 
-//        boolean credits = restTemplate.getForObject("http://account:8085/api/accounts/numbers", List.class).contains(cred.getAccountNo());
-      boolean credits = restTemplate.getForObject("http://localhost:8085/api/accounts/numbers", List.class).contains(cred.getAccountNo());
+        boolean credits = restTemplate.getForObject("http://account:8085/api/accounts/numbers", List.class).contains(cred.getAccountNo());
+//      boolean credits = restTemplate.getForObject("http://localhost:8085/api/accounts/numbers", List.class).contains(cred.getAccountNo());
 
 
         if (!credits) {
             return null;
         } else {
-//            restTemplate.put("http://account:8085/api/accounts/"+cred.getAccountNo()+"/deposit/"+cred.getCreditAmount(),List.class);
-            restTemplate.put("http://localhost:8085/api/accounts/" + cred.getAccountNo() + "/deposit/" + cred.getCreditAmount(), List.class);
+            restTemplate.put("http://account:8085/api/accounts/"+cred.getAccountNo()+"/deposit/"+cred.getCreditAmount(),List.class);
+//            restTemplate.put("http://localhost:8085/api/accounts/" + cred.getAccountNo() + "/deposit/" + cred.getCreditAmount(), List.class);
             return creditRepository.save(cred);
 
 
@@ -51,11 +53,20 @@ public class CreditService {
         creditRepository.deleteById(creditNo);
     }
 
-    public CreditResponse payCredit(CreditResponse credit) {
+    public ResponseEntity<Object> payCredit(CreditResponse credit) {
 
-        restTemplate.put("http://localhost:8085/api/accounts/"+credit.getAccountNo()+"/withdraw/"+credit.getRates(),List.class);
-//        restTemplate.put("http://account:8085/api/accounts/" + credit.getAccountNo() + "/withdraw/" + credit.getInterest(), List.class);
-        return creditRepository.save(credit);
+//        restTemplate.put("http://localhost:8085/api/accounts/"+credit.getAccountNo()+"/withdraw/"+credit.getRates(),List.class);
+        Double balance = restTemplate.getForObject("http://account:8085/api/accounts/"+credit.getAccountNo()+"/balance", Double.class);
+        if ( balance < credit.getRates()) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body("Pay off credit failed. \n\n" +
+                    "Rate: "+ credit.getRates()+"€\n" +
+                    "Current balance of account ("+credit.getAccountNo()+"): "+balance+"€");
+        }
+        else {
+            restTemplate.put("http://account:8085/api/accounts/" + credit.getAccountNo() + "/withdraw/" + credit.getRates(), List.class);
+            creditRepository.save(credit);
+            return ResponseEntity.ok(findByCreditNo(credit.getCreditNo()));
+        }
     }
 
     public List<CreditResponse> findCreditByAccountNo(Integer accountNo) {
