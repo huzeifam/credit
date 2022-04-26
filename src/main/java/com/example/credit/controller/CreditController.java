@@ -72,22 +72,23 @@ public class CreditController {
 
     @Operation(summary = "Pay off credit")
     @PutMapping("/credits/{creditNo}")
-    public CreditResponse updateCredit(
+    public ResponseEntity<Object> updateCredit(
             @Parameter(description = "Credit number of credit to be paid off")
             @PathVariable Integer creditNo
 
 
     ) {
+//        Optional<CreditResponse> credit = creditService.findByCreditNo(creditNo);
         CreditResponse credit = creditService.findByCreditNo(creditNo).orElseThrow();
         Double payedInterestRate = credit.getRemainingRepayment() - credit.getRates();
         if (payedInterestRate >= 0) {
             credit.setRemainingRepayment(payedInterestRate);
-            CreditResponse savedCredit = creditService.payCredit(credit);
-            return savedCredit;
+            creditService.payCredit(credit);
+            return ResponseEntity.ok(credit);
 
         } else
             creditService.deleteByCreditNo(creditNo);
-            return null;
+            return ResponseEntity.status(HttpStatus.GONE).body("Credit is payed off");
 
 
     }
