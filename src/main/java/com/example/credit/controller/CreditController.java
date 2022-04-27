@@ -46,6 +46,17 @@ public class CreditController {
         else
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Credit with credit number " + creditNo + " does not exist");
     }
+    @Hidden
+    @GetMapping("/credits/account-credit/{accountNo}")
+    public Object[] getCreditByAccountNo(
+            @PathVariable Integer accountNo
+    ){
+        List<CreditResponse> credit = creditService.findCreditByAccountNo(accountNo);
+        if (credit.isEmpty())
+            return null;
+        else
+            return new List[]{credit};
+    }
 
     @Operation(summary = "Request credit")
     @PostMapping("/credits")
