@@ -99,7 +99,7 @@ public class CreditController {
 
         } else
             creditService.deleteByCreditNo(creditNo);
-            return ResponseEntity.status(HttpStatus.GONE).body("Credit is payed off");
+            return ResponseEntity.status(HttpStatus.OK).body("Credit is payed off");
 
 
     }
