@@ -30,12 +30,10 @@ public class CreditService {
     public CreditResponse requestCredit(CreditResponse cred) {
 
 //        boolean credits = restTemplate.getForObject("http://account:8085/api/accounts/numbers", List.class).contains(cred.getAccountNo());
-      boolean credits = restTemplate.getForObject("http://localhost:8085/api/accounts/numbers", List.class).contains(cred.getAccountNo());
+//      boolean credits = restTemplate.getForObject("http://localhost:8085/api/accounts/numbers", List.class).contains(cred.getAccountNo());
 
 
-        if (!credits) {
-            return null;
-        } else {
+
 //            restTemplate.put("http://account:8085/api/accounts/"+cred.getAccountNo()+"/deposit/"+cred.getCreditAmount(),List.class);
             restTemplate.put("http://localhost:8085/api/accounts/" + cred.getAccountNo() + "/deposit/" + cred.getCreditAmount(), List.class);
             return creditRepository.save(cred);
@@ -43,7 +41,7 @@ public class CreditService {
 
         }
 
-    }
+
 
     public Optional<CreditResponse> findByCreditNo(Integer creditNo) {
         return creditRepository.findById(creditNo);
@@ -60,13 +58,17 @@ public class CreditService {
         if ( balance < credit.getRates()) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body("Pay off credit failed. \n\n" +
                     "Rate: "+ credit.getRates()+"€\n" +
-                    "Current balance of account ("+credit.getAccountNo()+"): "+balance+"€");
+                    "Current balance of account ("+credit.getAccountNo()+"): "+balance+"€\n" +
+                    "Remaining amount to repay: "+credit.getRemainingRepayment()+"€");
         }
         else {
             restTemplate.put("http://localhost:8085/api/accounts/"+credit.getAccountNo()+"/withdraw/"+credit.getRates(),List.class);
 //            restTemplate.put("http://account:8085/api/accounts/" + credit.getAccountNo() + "/withdraw/" + credit.getRates(), List.class);
             creditRepository.save(credit);
-            return ResponseEntity.ok(findByCreditNo(credit.getCreditNo()));
+            return ResponseEntity.ok("Successfully paid monthly rate of credit (credit number: "+credit.getCreditNo()+").\n" +
+                    "Previous remaining amount to repay: "+(credit.getRemainingRepayment()+credit.getRates())+"€\n" +
+                    "Rate: "+ credit.getRates()+"€\n" +
+                    "Remaining amount to repay: "+credit.getRemainingRepayment()+"€");
         }
     }
 

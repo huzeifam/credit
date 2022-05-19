@@ -8,9 +8,11 @@ import com.example.credit.service.CreditService;
 import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -28,6 +30,9 @@ public class CreditController {
         this.creditService = creditService;
     }
 
+    @Autowired
+    RestTemplate restTemplate;
+
     @Operation(summary = "Display all credits")
     @GetMapping("/credits")
     public List<CreditResponse> getAllCredits() {
@@ -44,13 +49,14 @@ public class CreditController {
         if (credit.isPresent())
             return ResponseEntity.ok(credit.get());
         else
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Credit with credit number " + creditNo + " does not exist");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Credit (credit number: " + creditNo + ") does not exist");
     }
+
     @Hidden
     @GetMapping("/credits/account-credit/{accountNo}")
     public Object[] getCreditByAccountNo(
             @PathVariable Integer accountNo
-    ){
+    ) {
         List<CreditResponse> credit = creditService.findCreditByAccountNo(accountNo);
         if (credit.isEmpty())
             return null;
@@ -59,26 +65,62 @@ public class CreditController {
     }
 
     @Operation(summary = "Request credit")
-    @PostMapping("/credits")
-    public CreditResponse requestCredit(
+    @PostMapping("/credits/{accountNo}/{creditAmount}")
+    public ResponseEntity<String> requestCredit(
             @Parameter(description = "Account number of account to request credit")
-            @RequestBody CreditCreateRequest cRequest,
+            @PathVariable Integer accountNo,
+            @Parameter(description = "Amount of credit")
+            @PathVariable Double creditAmount,
             @Parameter(description = "Set period (in month) for credit")
             @RequestParam CreditResponseEnum enumRequest
     ) {
+        Integer creditNo = UUID.randomUUID().hashCode() & Integer.MAX_VALUE;
         CreditResponse cred = new CreditResponse(
-                UUID.randomUUID().hashCode() & Integer.MAX_VALUE,
-                cRequest.getAccountNo(),
-                cRequest.getCreditAmount(),
+                creditNo,
+                accountNo,
+                creditAmount,
                 enumRequest.getPeriodInMonth(),
                 12.0 / enumRequest.getPeriodInMonth() * 10.0,
-                (cRequest.getCreditAmount() / 100.0) * (12.0 / enumRequest.getPeriodInMonth() * 10.0),
-                cRequest.getCreditAmount() + (cRequest.getCreditAmount() / 100.0) * (12.0 / enumRequest.getPeriodInMonth() * 10.0),
-                cRequest.getCreditAmount() + (cRequest.getCreditAmount() / 100.0) * (12.0 / enumRequest.getPeriodInMonth() * 10.0),
-                (cRequest.getCreditAmount() + (cRequest.getCreditAmount() / 100.0) * (12.0 / enumRequest.getPeriodInMonth() * 10.0))/enumRequest.getPeriodInMonth(),
+                (creditAmount / 100.0) * (12.0 / enumRequest.getPeriodInMonth() * 10.0),
+                creditAmount + (creditAmount / 100.0) * (12.0 / enumRequest.getPeriodInMonth() * 10.0),
+                creditAmount + (creditAmount / 100.0) * (12.0 / enumRequest.getPeriodInMonth() * 10.0),
+                (creditAmount + (creditAmount / 100.0) * (12.0 / enumRequest.getPeriodInMonth() * 10.0)) / enumRequest.getPeriodInMonth(),
                 LocalDate.now()
         );
-        return creditService.requestCredit(cred);
+//        boolean credits = restTemplate.getForObject("http://account:8085/api/accounts/numbers", List.class).contains(cred.getAccountNo());
+      boolean credits = restTemplate.getForObject("http://localhost:8085/api/accounts/numbers", List.class).contains(cred.getAccountNo());
+        if (!credits) {
+            if (creditAmount <= 0) {
+                return ResponseEntity.status(HttpStatus.CONFLICT).body("Could not create credit.\n" +
+                        "- Account (account number: " + accountNo + ") does not exist.\n" +
+                        "- Credit amount should be over 0!");
+            } else
+                return ResponseEntity.status(HttpStatus.CONFLICT).body("Could not create credit.\n" +
+                        "- Account (account number: " + accountNo + ") does not exist.");
+        } else if (credits) {
+//            String accountType = restTemplate.getForObject("http://account:8085/api/accounts/" + accountNo + "/accountType", String.class);
+            String accountType = restTemplate.getForObject("http://localhost:8085/api/accounts/" + accountNo + "/accountType", String.class);
+
+            if (accountType.equals("Tagesgeldkonto")) {
+                if (creditAmount > 0) {
+                    return ResponseEntity.status(HttpStatus.CONFLICT).body("Could not create credit.\n" +
+                            "- No credits allowed for account type: " + accountType);
+                } else
+                    return ResponseEntity.status(HttpStatus.CONFLICT).body("Could not create credit.\n" +
+                            "- No credits allowd for account type: " + accountType + "\n" +
+                            "- Credit amount should be over 0!");
+            } else if (!accountType.equals("Tagesgeldkonto")){
+                if (creditAmount > 0) {
+                    creditService.requestCredit(cred);
+                    return ResponseEntity.ok("Credit for account (" + accountNo + ") created.\n" +
+                            "Credit amount: " + creditAmount + "\n" +
+                            "Period in month: " + enumRequest.getPeriodInMonth() + "\n" +
+                            "For more information, check credit with credit number: " + creditNo);
+                } else
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Credit amount should be over 0!");
+            }
+        }
+        return null;
     }
 
     @Operation(summary = "Pay off credit")
@@ -90,21 +132,23 @@ public class CreditController {
 
     ) {
 //        Optional<CreditResponse> credit = creditService.findByCreditNo(creditNo);
-        CreditResponse credit = creditService.findByCreditNo(creditNo).orElseThrow();
-        Double payedInterestRate = credit.getRemainingRepayment() - credit.getRates();
-        if (payedInterestRate >= 0) {
-            credit.setRemainingRepayment(payedInterestRate);
-            return creditService.payCredit(credit);
+        if (creditService.findByCreditNo(creditNo).isPresent()) {
+            CreditResponse credit = creditService.findByCreditNo(creditNo).orElseThrow();
+            Double payedInterestRate = credit.getRemainingRepayment() - credit.getRates();
+            if (payedInterestRate >= 0) {
+                credit.setRemainingRepayment(payedInterestRate);
+                return creditService.payCredit(credit);
 
 
-        } else
-            creditService.deleteByCreditNo(creditNo);
+            } else
+                creditService.deleteByCreditNo(creditNo);
             return ResponseEntity.status(HttpStatus.OK).body("Credit is payed off");
 
-
+        }
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Credit (credit number: " + creditNo + ") not found.");
     }
 
-
+    @Hidden
     @Operation(summary = "Delete credit by credit number")
     @DeleteMapping("/credits/{creditNo}")
     public ResponseEntity deleteCredit(
@@ -115,10 +159,10 @@ public class CreditController {
 
         if (credit.isPresent()) {
             creditService.deleteByCreditNo(creditNo);
-            return ResponseEntity.status(HttpStatus.ACCEPTED).body("Credit with credit number " + creditNo + " deleted.");
+            return ResponseEntity.status(HttpStatus.ACCEPTED).body("Credit (credit number: " + creditNo + ") deleted.");
 
         } else
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Could not delete. Credit with credit number " + creditNo + " does not exist.");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Could not delete. Credit (credit number: " + creditNo + ") does not exist.");
 
     }
 
@@ -126,13 +170,12 @@ public class CreditController {
     @DeleteMapping("/credits/account-credits/{accountNo}")
     public Void deleteCreditsOfAccount(
             @PathVariable Integer accountNo
-    ){
+    ) {
         List<CreditResponse> credit = creditService.findCreditByAccountNo(accountNo);
 
-        if (credit.isEmpty()){
+        if (credit.isEmpty()) {
             return null;
-        }
-        else {
+        } else {
             return creditService.deleteCreditByAccountNo(accountNo);
         }
     }
